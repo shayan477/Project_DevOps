@@ -1,16 +1,19 @@
 pipeline {
   agent any
 
+  tools {
+    terraform 'terraform'    // this must match the name you gave in Global Tool Config
+  }
+
   environment {
-    TF_DIR      = 'terraform'
     ANSIBLE_DIR = 'ansible'
+    TF_DIR      = 'terraform'
   }
 
   stages {
     stage('Checkout') {
       steps {
-        // code is already checked out by SCM
-        echo 'Workspace contains:' 
+        echo "Workspace contents:"
         sh 'ls -R \$WORKSPACE'
       }
     }
@@ -24,13 +27,13 @@ pipeline {
           string(credentialsId: 'AZ_TENANT_ID_CRED',     variable: 'ARM_TENANT_ID'),
         ]) {
           sh '''
-            echo "Exporting ARM_* variables..."
+            echo "Exporting ARM_* vars..."
             export ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
             export ARM_CLIENT_ID=$ARM_CLIENT_ID
             export ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET
             export ARM_TENANT_ID=$ARM_TENANT_ID
 
-            echo "Running Terraform..."
+            echo "Running Terraform in \$WORKSPACE/${TF_DIR}"
             cd \$WORKSPACE/${TF_DIR}
             terraform init
             terraform apply -auto-approve
@@ -58,8 +61,8 @@ pipeline {
             script: "terraform -chdir=\$WORKSPACE/${TF_DIR} output -raw public_ip1",
             returnStdout: true
           ).trim()
-          echo "Verifying page at http://\$ip"
-          sh "curl --retry 5 --retry-delay 10 http://\$ip"
+          echo "Verifying http://$ip ..."
+          sh "curl --retry 5 --retry-delay 5 http://$ip"
         }
       }
     }
@@ -67,7 +70,7 @@ pipeline {
 
   post {
     always {
-      echo 'Pipeline finished.'
+      echo 'Pipeline complete.'
     }
   }
 }
