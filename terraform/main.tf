@@ -97,7 +97,7 @@ resource "azurerm_linux_virtual_machine" "vm1" {
 
   admin_ssh_key {
     username   = var.admin_username
-    public_key = var.ssh_public_key_path
+    public_key = var.ssh_public_key
   }
 
   network_interface_ids = [azurerm_network_interface.nic1.id]
